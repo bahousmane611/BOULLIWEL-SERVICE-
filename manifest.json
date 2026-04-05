@@ -1,0 +1,12 @@
+{
+  "name": "Boulliwel Service — Gestion",
+  "short_name": "Boulliwel",
+  "description": "Application de gestion de stock, bénéfices et dépenses",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0D0F14",
+  "theme_color": "#C9A84C",
+  "orientation": "portrait-primary",
+  "lang": "fr",
+  "categories": ["business", "finance", "productivity"]
+}

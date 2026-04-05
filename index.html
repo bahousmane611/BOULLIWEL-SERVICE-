@@ -1,0 +1,1444 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Boulliwel Service — Gestion d'Entreprise</title>
+<meta name="description" content="Application de gestion de stock, bénéfices et dépenses pour Boulliwel Service">
+<meta name="theme-color" content="#C9A84C">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Boulliwel">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #C9A84C;
+  --gold-light: #E8C96B;
+  --dark: #0D0F14;
+  --dark2: #161921;
+  --dark3: #1E2230;
+  --dark4: #252A3A;
+  --text: #E8E8F0;
+  --text-muted: #8890A8;
+  --green: #2ECC71;
+  --red: #E74C3C;
+  --blue: #3498DB;
+  --purple: #9B59B6;
+  --border: rgba(201,168,76,0.18);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--dark);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+/* BACKGROUND */
+body::before {
+  content:'';
+  position:fixed;
+  top:0;left:0;right:0;bottom:0;
+  background: radial-gradient(ellipse 60% 40% at 80% 10%, rgba(201,168,76,0.07) 0%, transparent 70%),
+              radial-gradient(ellipse 40% 60% at 10% 90%, rgba(52,152,219,0.05) 0%, transparent 70%);
+  pointer-events:none;
+  z-index:0;
+}
+
+/* HEADER */
+header {
+  position: sticky; top:0; z-index:100;
+  background: rgba(13,15,20,0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 64px;
+}
+.logo { font-family:'Playfair Display',serif; font-size:1.3rem; color:var(--gold); letter-spacing:.04em; }
+.logo span { color:var(--text-muted); font-size:.75rem; display:block; font-family:'DM Sans',sans-serif; font-weight:300; }
+.header-actions { display:flex; gap:10px; align-items:center; }
+
+/* NAV TABS */
+.nav-tabs {
+  display: flex; gap: 4px; padding: 16px 24px 0;
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto; background: var(--dark2);
+  position: sticky; top:64px; z-index:90;
+}
+.tab-btn {
+  padding: 10px 20px; border-radius: 8px 8px 0 0;
+  background: transparent; border: 1px solid transparent;
+  border-bottom: none; color: var(--text-muted);
+  cursor: pointer; font-family: 'DM Sans'; font-size: .85rem;
+  font-weight: 500; white-space: nowrap; transition: all .2s;
+}
+.tab-btn.active {
+  background: var(--dark3); border-color: var(--border);
+  color: var(--gold);
+}
+.tab-btn:hover:not(.active) { color: var(--text); }
+
+/* MAIN */
+main { padding: 24px; max-width: 1200px; margin: 0 auto; position:relative; z-index:1; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* CARDS */
+.card {
+  background: var(--dark2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 20px;
+}
+.card-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.1rem; color: var(--gold);
+  margin-bottom: 18px;
+  display: flex; align-items: center; gap: 10px;
+}
+.card-title .icon { font-size: 1.2rem; }
+
+/* GRID */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media(max-width:768px){
+  .grid-2,.grid-3,.grid-4 { grid-template-columns:1fr; }
+}
+
+/* STAT CARDS */
+.stat-card {
+  background: var(--dark3);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px;
+  text-align: center;
+}
+.stat-card .label { font-size:.75rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:.08em; margin-bottom:6px; }
+.stat-card .value { font-family:'Playfair Display',serif; font-size:1.5rem; color:var(--gold); }
+.stat-card .value.green { color: var(--green); }
+.stat-card .value.red { color: var(--red); }
+.stat-card .value.blue { color: var(--blue); }
+.stat-card .sub { font-size:.72rem; color:var(--text-muted); margin-top:4px; }
+
+/* FORMS */
+.form-row { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+.form-group { flex:1; min-width:160px; display:flex; flex-direction:column; gap:6px; }
+.form-group label { font-size:.78rem; color:var(--text-muted); font-weight:500; text-transform:uppercase; letter-spacing:.06em; }
+.form-group input, .form-group select, .form-group textarea {
+  background: var(--dark4); border: 1px solid var(--border);
+  border-radius: 8px; padding: 10px 14px;
+  color: var(--text); font-family: 'DM Sans'; font-size:.9rem;
+  outline: none; transition: border-color .2s;
+}
+.form-group input:focus, .form-group select:focus {
+  border-color: var(--gold);
+}
+.form-group select option { background: var(--dark4); }
+
+/* BUTTONS */
+.btn {
+  padding: 10px 20px; border-radius: 8px;
+  font-family: 'DM Sans'; font-size: .88rem; font-weight: 600;
+  cursor: pointer; border: none; transition: all .2s;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.btn-gold { background: var(--gold); color: var(--dark); }
+.btn-gold:hover { background: var(--gold-light); transform:translateY(-1px); }
+.btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-muted); }
+.btn-outline:hover { border-color: var(--gold); color: var(--gold); }
+.btn-red { background: rgba(231,76,60,0.15); border:1px solid rgba(231,76,60,0.3); color:var(--red); }
+.btn-red:hover { background: rgba(231,76,60,0.25); }
+.btn-green { background: rgba(46,204,113,0.15); border:1px solid rgba(46,204,113,0.3); color:var(--green); }
+.btn-green:hover { background: rgba(46,204,113,0.25); }
+.btn-sm { padding: 6px 14px; font-size:.8rem; }
+
+/* TABLE */
+.table-wrap { overflow-x: auto; }
+table { width:100%; border-collapse: collapse; font-size:.85rem; }
+th { 
+  background: var(--dark4); color:var(--text-muted);
+  padding: 10px 14px; text-align:left; font-weight:500;
+  text-transform:uppercase; font-size:.72rem; letter-spacing:.06em;
+  border-bottom: 1px solid var(--border);
+}
+td { padding:10px 14px; border-bottom:1px solid rgba(255,255,255,0.04); }
+tr:hover td { background: rgba(201,168,76,0.04); }
+
+/* BADGES */
+.badge {
+  display:inline-block; padding:3px 10px; border-radius:20px;
+  font-size:.72rem; font-weight:600;
+}
+.badge-green { background:rgba(46,204,113,0.15); color:var(--green); }
+.badge-red { background:rgba(231,76,60,0.15); color:var(--red); }
+.badge-blue { background:rgba(52,152,219,0.15); color:var(--blue); }
+.badge-gold { background:rgba(201,168,76,0.15); color:var(--gold); }
+.badge-purple { background:rgba(155,89,182,0.15); color:var(--purple); }
+
+/* SEPARATOR */
+.sep { border:none; border-top: 1px solid var(--border); margin:16px 0; }
+.section-title { font-size:.78rem; text-transform:uppercase; letter-spacing:.1em; color:var(--text-muted); margin-bottom:12px; font-weight:600; }
+
+/* ALERT */
+.alert {
+  padding:12px 16px; border-radius:10px; margin-bottom:16px; font-size:.88rem;
+}
+.alert-info { background:rgba(52,152,219,0.12); border:1px solid rgba(52,152,219,0.25); color:#7CC8F0; }
+.alert-success { background:rgba(46,204,113,0.12); border:1px solid rgba(46,204,113,0.25); color:var(--green); }
+.alert-warning { background:rgba(201,168,76,0.12); border:1px solid rgba(201,168,76,0.25); color:var(--gold); }
+
+/* PROGRESS BAR */
+.progress-bar { background:var(--dark4); border-radius:999px; height:6px; overflow:hidden; margin-top:8px; }
+.progress-fill { height:100%; border-radius:999px; background:linear-gradient(90deg,var(--gold),var(--gold-light)); transition:width .5s; }
+
+/* MODAL */
+.modal-overlay {
+  position:fixed; inset:0; background:rgba(0,0,0,.75); z-index:500;
+  display:none; align-items:center; justify-content:center; padding:20px;
+}
+.modal-overlay.open { display:flex; }
+.modal {
+  background:var(--dark2); border:1px solid var(--border); border-radius:20px;
+  padding:28px; max-width:540px; width:100%; max-height:90vh; overflow-y:auto;
+}
+.modal-title { font-family:'Playfair Display',serif; font-size:1.2rem; color:var(--gold); margin-bottom:20px; }
+
+/* NOTIFICATION */
+#notification {
+  position:fixed; bottom:24px; right:24px; z-index:999;
+  background:var(--dark3); border:1px solid var(--gold);
+  border-radius:12px; padding:14px 20px; font-size:.88rem;
+  transform:translateY(80px); opacity:0; transition:all .3s;
+  max-width:320px;
+}
+#notification.show { transform:translateY(0); opacity:1; }
+
+/* DIVIDER TEXT */
+.divider-text {
+  display:flex; align-items:center; gap:12px; margin:16px 0;
+  color:var(--text-muted); font-size:.78rem; text-transform:uppercase; letter-spacing:.08em;
+}
+.divider-text::before,.divider-text::after {
+  content:''; flex:1; height:1px; background:var(--border);
+}
+
+.big-number {
+  font-family:'Playfair Display',serif; font-size:2rem;
+  font-weight:900;
+}
+
+.repartition-box {
+  background:var(--dark4); border-radius:12px; padding:16px;
+  border-left:3px solid var(--gold);
+}
+.repartition-box.partner { border-left-color:var(--blue); }
+.repartition-box.debt { border-left-color:var(--red); }
+.repartition-box.green-box { border-left-color:var(--green); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    Boulliwel Service
+    <span>Gestion d'Entreprise</span>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-outline btn-sm" onclick="exportData()">💾 Exporter</button>
+    <button class="btn btn-outline btn-sm" onclick="importData()">📂 Importer</button>
+    <button class="btn btn-gold btn-sm" onclick="saveToCloud()">☁️ Sauvegarder</button>
+    <button id="btn-install" class="btn btn-green btn-sm" style="display:none">📲 Installer l'app</button>
+  </div>
+</header>
+
+<div class="nav-tabs">
+  <button class="tab-btn active" onclick="showTab('dashboard')">📊 Tableau de bord</button>
+  <button class="tab-btn" onclick="showTab('stock')">📦 Stock Entreprise</button>
+  <button class="tab-btn" onclick="showTab('mes-produits')">🏷️ Mes Produits Perso</button>
+  <button class="tab-btn" onclick="showTab('bilan')">💰 Bilan & Répartition</button>
+  <button class="tab-btn" onclick="showTab('associe')">🤝 Mon Associé</button>
+  <button class="tab-btn" onclick="showTab('depenses')">💸 Dépenses</button>
+  <button class="tab-btn" onclick="showTab('historique')">📋 Historique</button>
+</div>
+
+<main>
+
+<!-- ===== DASHBOARD ===== -->
+<div id="tab-dashboard" class="tab-panel active">
+  <div class="grid-4" id="stats-grid">
+    <div class="stat-card">
+      <div class="label">Chiffre d'affaires</div>
+      <div class="value green big-number" id="stat-ca">0 GNF</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Bénéfice net</div>
+      <div class="value green big-number" id="stat-benefice">0 GNF</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Ma part</div>
+      <div class="value blue big-number" id="stat-ma-part">0 GNF</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Part Associé</div>
+      <div class="value" id="stat-part-associe">0 GNF</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Total Dépenses</div>
+      <div class="value red" id="stat-depenses">0 GNF</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Entreprise me doit</div>
+      <div class="value gold" id="stat-entreprise-doit">0 GNF</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Associé me doit</div>
+      <div class="value red" id="stat-associe-doit">0 GNF</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Produits en stock</div>
+      <div class="value" id="stat-produits">0</div>
+    </div>
+  </div>
+
+  <div class="grid-2" style="margin-top:20px">
+    <div class="card">
+      <div class="card-title"><span class="icon">⚡</span> Actions rapides</div>
+      <div style="display:flex;flex-wrap:wrap;gap:10px">
+        <button class="btn btn-gold" onclick="showTab('stock');openModal('modal-entree')">+ Entrée stock</button>
+        <button class="btn btn-outline" onclick="showTab('stock');openModal('modal-sortie')">− Sortie stock</button>
+        <button class="btn btn-outline" onclick="showTab('depenses');openModal('modal-depense')">+ Dépense</button>
+        <button class="btn btn-outline" onclick="showTab('bilan')">📊 Voir Bilan</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="icon">📅</span> Dernières opérations</div>
+      <div id="last-ops" style="font-size:.85rem;color:var(--text-muted)">Aucune opération enregistrée.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== STOCK ENTREPRISE ===== -->
+<div id="tab-stock" class="tab-panel">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <h2 style="font-family:'Playfair Display',serif;color:var(--gold)">Stock Entreprise</h2>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-gold" onclick="openModal('modal-entree')">+ Entrée</button>
+      <button class="btn btn-outline" onclick="openModal('modal-sortie')">− Sortie / Vente</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="icon">📦</span> Inventaire actuel</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Produit</th>
+            <th>Qté dispo</th>
+            <th>P. Achat unit.</th>
+            <th>P. Vente unit.</th>
+            <th>Valeur stock</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="stock-tbody">
+          <tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:30px">Aucun produit en stock</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MES PRODUITS PERSO ===== -->
+<div id="tab-mes-produits" class="tab-panel">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <h2 style="font-family:'Playfair Display',serif;color:var(--gold)">Mes Produits Personnels</h2>
+    <button class="btn btn-gold" onclick="openModal('modal-perso')">+ Ajouter produit perso</button>
+  </div>
+
+  <div class="alert alert-info">
+    💡 Ces produits vous appartiennent personnellement. L'entreprise ajoute <strong>10%</strong> du prix d'achat à la somme qu'elle vous doit pour chaque produit enregistré.
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="icon">🏷️</span> Mes produits & créances</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Produit</th>
+            <th>Qté</th>
+            <th>P. Achat</th>
+            <th>10% commission</th>
+            <th>Total dû</th>
+            <th>Statut</th>
+          </tr>
+        </thead>
+        <tbody id="perso-tbody">
+          <tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:30px">Aucun produit personnel</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+      <span style="color:var(--text-muted)">Total que l'entreprise me doit (produits perso) :</span>
+      <span style="font-family:'Playfair Display',serif;font-size:1.3rem;color:var(--gold)" id="total-perso-du">0 GNF</span>
+    </div>
+  </div>
+</div>
+
+<!-- ===== BILAN ===== -->
+<div id="tab-bilan" class="tab-panel">
+  <h2 style="font-family:'Playfair Display',serif;color:var(--gold);margin-bottom:8px">Bilan & Répartition des Bénéfices</h2>
+  <div class="alert alert-info" style="margin-bottom:20px">
+    ✅ Ce bilan est calculé <strong>automatiquement</strong> à partir de vos ventes, achats et dépenses enregistrés. Aucune saisie manuelle nécessaire.
+  </div>
+
+  <!-- Champs cachés pour compatibilité -->
+  <input type="hidden" id="bilan-ca">
+  <input type="hidden" id="bilan-achat">
+  <input type="hidden" id="bilan-depenses">
+
+  <div id="bilan-result">
+    <!-- Résultats affichés dynamiquement -->
+  </div>
+</div>
+
+<!-- ===== ASSOCIÉ ===== -->
+<div id="tab-associe" class="tab-panel">
+  <h2 style="font-family:'Playfair Display',serif;color:var(--gold);margin-bottom:20px">Gestion de l'Associé</h2>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title"><span class="icon">👤</span> Dettes de l'associé</div>
+      
+      <div class="section-title">Dette directe envers moi</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Montant de la dette</label>
+          <input type="number" id="dette-associe" placeholder="0" oninput="saveData();updateDashboard()">
+        </div>
+      </div>
+
+      <div class="section-title" style="margin-top:12px">Dette de sa femme</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Montant (dette femme associé)</label>
+          <input type="number" id="dette-femme" placeholder="0" oninput="saveData();updateDashboard()">
+        </div>
+      </div>
+
+      <div style="margin-top:16px;padding:14px;background:var(--dark4);border-radius:10px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+          <span style="color:var(--text-muted)">Dette directe :</span>
+          <span id="disp-dette-associe" style="color:var(--red)">0 GNF</span>
+        </div>
+        <div style="display:flex;justify-content:space-between">
+          <span style="color:var(--text-muted)">Dette de sa femme :</span>
+          <span id="disp-dette-femme" style="color:var(--red)">0 GNF</span>
+        </div>
+        <hr class="sep">
+        <div style="display:flex;justify-content:space-between">
+          <span style="font-weight:600">Total dettes :</span>
+          <span id="disp-total-dettes" style="color:var(--red);font-family:'Playfair Display',serif;font-size:1.1rem">0 GNF</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="icon">💳</span> Paiements de l'associé</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Montant du paiement</label>
+          <input type="number" id="paiement-montant" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label>Note</label>
+          <input type="text" id="paiement-note" placeholder="Description...">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Type</label>
+          <select id="paiement-type">
+            <option value="dette-directe">Dette directe</option>
+            <option value="dette-femme">Dette de sa femme</option>
+            <option value="part-benefice">Part sur bénéfice</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn btn-green" onclick="enregistrerPaiement()">✓ Enregistrer paiement</button>
+
+      <hr class="sep">
+      <div class="section-title">Historique des paiements</div>
+      <div id="historique-paiements" style="font-size:.82rem;color:var(--text-muted);max-height:200px;overflow-y:auto">
+        Aucun paiement enregistré.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== DÉPENSES ===== -->
+<div id="tab-depenses" class="tab-panel">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <h2 style="font-family:'Playfair Display',serif;color:var(--gold)">Dépenses</h2>
+    <button class="btn btn-gold" onclick="openModal('modal-depense')">+ Ajouter dépense</button>
+  </div>
+
+  <div class="grid-2">
+    <div class="stat-card">
+      <div class="label">Total dépenses</div>
+      <div class="value red big-number" id="stat-dep-total">0 GNF</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Ce mois-ci</div>
+      <div class="value red" id="stat-dep-mois">0 GNF</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:20px">
+    <div class="card-title"><span class="icon">💸</span> Liste des dépenses</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Catégorie</th>
+            <th>Description</th>
+            <th>Montant</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="depenses-tbody">
+          <tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:30px">Aucune dépense</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ===== HISTORIQUE ===== -->
+<div id="tab-historique" class="tab-panel">
+  <h2 style="font-family:'Playfair Display',serif;color:var(--gold);margin-bottom:20px">Historique complet</h2>
+  <div class="card">
+    <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+      <select id="filter-type" onchange="filtrerHistorique()" style="background:var(--dark4);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-family:'DM Sans'">
+        <option value="">Tous les types</option>
+        <option value="entree">Entrée stock</option>
+        <option value="sortie">Sortie/Vente</option>
+        <option value="depense">Dépense</option>
+        <option value="paiement">Paiement associé</option>
+        <option value="perso">Produit perso</option>
+      </select>
+      <button class="btn btn-outline btn-sm" onclick="viderHistorique()">🗑️ Vider</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Montant</th>
+          </tr>
+        </thead>
+        <tbody id="historique-tbody">
+          <tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:30px">Aucun historique</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<!-- ========== MODALS ========== -->
+
+<!-- Modal Entrée Stock -->
+<div class="modal-overlay" id="modal-entree">
+  <div class="modal">
+    <div class="modal-title">📦 Entrée de stock (Entreprise)</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Nom du produit</label>
+        <input type="text" id="ent-nom" placeholder="Ex: Riz, Sucre...">
+      </div>
+      <div class="form-group">
+        <label>Quantité</label>
+        <input type="number" id="ent-qte" placeholder="0" min="1">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Prix d'achat unitaire (GNF)</label>
+        <input type="number" id="ent-achat" placeholder="0">
+      </div>
+      <div class="form-group">
+        <label>Prix de vente unitaire (GNF)</label>
+        <input type="number" id="ent-vente" placeholder="0">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Date</label>
+        <input type="date" id="ent-date">
+      </div>
+      <div class="form-group">
+        <label>Note</label>
+        <input type="text" id="ent-note" placeholder="Optionnel">
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
+      <button class="btn btn-outline" onclick="closeModal('modal-entree')">Annuler</button>
+      <button class="btn btn-gold" onclick="enregistrerEntree()">✓ Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Sortie Stock -->
+<div class="modal-overlay" id="modal-sortie">
+  <div class="modal">
+    <div class="modal-title">🛒 Sortie / Vente</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Produit</label>
+        <select id="sort-produit" onchange="remplirPrixSortie()">
+          <option value="">-- Choisir --</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Quantité vendue</label>
+        <input type="number" id="sort-qte" placeholder="0" min="1">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Prix de vente unitaire (GNF)</label>
+        <input type="number" id="sort-vente" placeholder="0">
+      </div>
+      <div class="form-group">
+        <label>Date</label>
+        <input type="date" id="sort-date">
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
+      <button class="btn btn-outline" onclick="closeModal('modal-sortie')">Annuler</button>
+      <button class="btn btn-gold" onclick="enregistrerSortie()">✓ Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Produit Perso -->
+<div class="modal-overlay" id="modal-perso">
+  <div class="modal">
+    <div class="modal-title">🏷️ Nouveau produit personnel</div>
+    <div class="alert alert-warning">L'entreprise vous devra : Prix d'achat + 10% par produit enregistré</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Nom du produit</label>
+        <input type="text" id="perso-nom" placeholder="Ex: Cahiers, Stylos...">
+      </div>
+      <div class="form-group">
+        <label>Quantité</label>
+        <input type="number" id="perso-qte" placeholder="0" min="1">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Prix d'achat unitaire (GNF)</label>
+        <input type="number" id="perso-achat" placeholder="0">
+      </div>
+      <div class="form-group">
+        <label>Date</label>
+        <input type="date" id="perso-date">
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
+      <button class="btn btn-outline" onclick="closeModal('modal-perso')">Annuler</button>
+      <button class="btn btn-gold" onclick="enregistrerPerso()">✓ Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Dépense -->
+<div class="modal-overlay" id="modal-depense">
+  <div class="modal">
+    <div class="modal-title">💸 Nouvelle dépense</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Catégorie</label>
+        <select id="dep-categorie">
+          <option value="Transport">Transport</option>
+          <option value="Loyer">Loyer</option>
+          <option value="Electricité">Electricité</option>
+          <option value="Salaire">Salaire</option>
+          <option value="Fournitures">Fournitures</option>
+          <option value="Communication">Communication</option>
+          <option value="Autre">Autre</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Montant (GNF)</label>
+        <input type="number" id="dep-montant" placeholder="0">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Description</label>
+        <input type="text" id="dep-desc" placeholder="Détail...">
+      </div>
+      <div class="form-group">
+        <label>Date</label>
+        <input type="date" id="dep-date">
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
+      <button class="btn btn-outline" onclick="closeModal('modal-depense')">Annuler</button>
+      <button class="btn btn-gold" onclick="enregistrerDepense()">✓ Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Notification -->
+<div id="notification"></div>
+
+<!-- Import hidden input -->
+<input type="file" id="import-input" accept=".json" style="display:none" onchange="handleImport(event)">
+
+<script>
+// ========== DATA STORAGE ==========
+let data = {
+  stock: [],       // {id, nom, qteDisponible, prixAchat, prixVente, dateEntree}
+  ventes: [],      // {id, produitId, qte, prixVente, date, benefice}
+  depenses: [],    // {id, categorie, desc, montant, date}
+  perso: [],       // {id, nom, qte, prixAchat, date, rembourse}
+  paiements: [],   // {id, montant, type, note, date}
+  associe: {
+    detteDirecte: 0,
+    detteFemme: 0,
+    paiementsRecu: 0
+  },
+  historique: []   // {id, type, desc, montant, date}
+};
+
+const STORAGE_KEY = 'boulliwel_data';
+
+function loadData() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      data = JSON.parse(saved);
+      // Compat
+      if (!data.perso) data.perso = [];
+      if (!data.paiements) data.paiements = [];
+      if (!data.historique) data.historique = [];
+      if (!data.associe) data.associe = {detteDirecte:0, detteFemme:0, paiementsRecu:0};
+    }
+  } catch(e) {}
+}
+
+function saveData() {
+  // Sync associé inputs
+  data.associe.detteDirecte = parseFloat(document.getElementById('dette-associe').value)||0;
+  data.associe.detteFemme = parseFloat(document.getElementById('dette-femme').value)||0;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  updateAllDisplays();
+}
+
+// ========== TABS ==========
+function showTab(id) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  event && event.target && event.target.classList.add('active');
+  // find btn
+  const btns = document.querySelectorAll('.tab-btn');
+  btns.forEach(b => { if(b.getAttribute('onclick') && b.getAttribute('onclick').includes("'"+id+"'")) b.classList.add('active'); });
+}
+
+// ========== MODALS ==========
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+  // Set today date
+  const today = new Date().toISOString().split('T')[0];
+  const dateInputs = document.querySelectorAll('#'+id+' input[type=date]');
+  dateInputs.forEach(i => { if(!i.value) i.value = today; });
+  // Populate product select for sortie
+  if(id === 'modal-sortie') populateProductSelect();
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+document.querySelectorAll('.modal-overlay').forEach(o => {
+  o.addEventListener('click', function(e) {
+    if(e.target === o) o.classList.remove('open');
+  });
+});
+
+function populateProductSelect() {
+  const sel = document.getElementById('sort-produit');
+  sel.innerHTML = '<option value="">-- Choisir --</option>';
+  data.stock.forEach(p => {
+    if(p.qteDisponible > 0) {
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = `${p.nom} (${p.qteDisponible} dispo)`;
+      sel.appendChild(opt);
+    }
+  });
+}
+function remplirPrixSortie() {
+  const id = document.getElementById('sort-produit').value;
+  const p = data.stock.find(x=>x.id==id);
+  if(p) document.getElementById('sort-vente').value = p.prixVente;
+}
+
+// ========== ENTRÉE STOCK ==========
+function enregistrerEntree() {
+  const nom = document.getElementById('ent-nom').value.trim();
+  const qte = parseInt(document.getElementById('ent-qte').value)||0;
+  const achat = parseFloat(document.getElementById('ent-achat').value)||0;
+  const vente = parseFloat(document.getElementById('ent-vente').value)||0;
+  const date = document.getElementById('ent-date').value;
+  const note = document.getElementById('ent-note').value;
+  if(!nom||qte<=0||achat<=0) { notify('⚠️ Veuillez remplir tous les champs obligatoires'); return; }
+
+  // Check si produit existe déjà
+  const existing = data.stock.find(p => p.nom.toLowerCase()===nom.toLowerCase());
+  if(existing) {
+    existing.qteDisponible += qte;
+    existing.prixAchat = achat; // mise à jour prix
+    existing.prixVente = vente;
+  } else {
+    data.stock.push({ id: Date.now(), nom, qteDisponible: qte, prixAchat: achat, prixVente: vente, dateEntree: date });
+  }
+  
+  ajouterHistorique('entree', `Entrée: ${nom} x${qte}`, qte*achat, date);
+  saveData();
+  renderStock();
+  closeModal('modal-entree');
+  clearModal('modal-entree');
+  notify('✅ Entrée enregistrée : '+nom);
+}
+
+// ========== SORTIE / VENTE ==========
+function enregistrerSortie() {
+  const pid = document.getElementById('sort-produit').value;
+  const qte = parseInt(document.getElementById('sort-qte').value)||0;
+  const pv = parseFloat(document.getElementById('sort-vente').value)||0;
+  const date = document.getElementById('sort-date').value;
+  if(!pid||qte<=0||pv<=0) { notify('⚠️ Champs incomplets'); return; }
+
+  const produit = data.stock.find(p=>p.id==pid);
+  if(!produit) { notify('⚠️ Produit introuvable'); return; }
+  if(produit.qteDisponible < qte) { notify('⚠️ Stock insuffisant ('+produit.qteDisponible+' disponibles)'); return; }
+
+  produit.qteDisponible -= qte;
+  const benefice = (pv - produit.prixAchat) * qte;
+  const ca = pv * qte;
+  data.ventes.push({ id: Date.now(), produitId: pid, nom: produit.nom, qte, prixVente: pv, prixAchat: produit.prixAchat, date, benefice, ca });
+  
+  ajouterHistorique('sortie', `Vente: ${produit.nom} x${qte} à ${fmt(pv)}/u`, ca, date);
+  saveData();
+  renderStock();
+  closeModal('modal-sortie');
+  notify('✅ Vente enregistrée: '+produit.nom+' x'+qte);
+}
+
+// ========== PRODUITS PERSO ==========
+function enregistrerPerso() {
+  const nom = document.getElementById('perso-nom').value.trim();
+  const qte = parseInt(document.getElementById('perso-qte').value)||0;
+  const achat = parseFloat(document.getElementById('perso-achat').value)||0;
+  const date = document.getElementById('perso-date').value;
+  if(!nom||qte<=0||achat<=0) { notify('⚠️ Champs incomplets'); return; }
+
+  const totalAchat = achat * qte;
+  const commission = totalAchat * 0.10;
+  const totalDu = totalAchat + commission;
+  data.perso.push({ id: Date.now(), nom, qte, prixAchat: achat, totalAchat, commission, totalDu, date, rembourse: 0 });
+  
+  ajouterHistorique('perso', `Produit perso: ${nom} x${qte} (entreprise doit +${fmt(totalDu)})`, totalDu, date);
+  saveData();
+  renderPerso();
+  closeModal('modal-perso');
+  clearModal('modal-perso');
+  notify('✅ Produit enregistré. Entreprise vous doit: '+fmt(totalDu));
+}
+
+// ========== DÉPENSES ==========
+function enregistrerDepense() {
+  const cat = document.getElementById('dep-categorie').value;
+  const montant = parseFloat(document.getElementById('dep-montant').value)||0;
+  const desc = document.getElementById('dep-desc').value;
+  const date = document.getElementById('dep-date').value;
+  if(montant<=0) { notify('⚠️ Montant invalide'); return; }
+
+  data.depenses.push({ id: Date.now(), categorie: cat, desc, montant, date });
+  ajouterHistorique('depense', `Dépense ${cat}: ${desc}`, montant, date);
+  saveData();
+  renderDepenses();
+  closeModal('modal-depense');
+  clearModal('modal-depense');
+  notify('✅ Dépense enregistrée: '+fmt(montant));
+}
+
+// ========== PAIEMENT ASSOCIÉ ==========
+function enregistrerPaiement() {
+  const montant = parseFloat(document.getElementById('paiement-montant').value)||0;
+  const note = document.getElementById('paiement-note').value;
+  const type = document.getElementById('paiement-type').value;
+  if(montant<=0) { notify('⚠️ Montant invalide'); return; }
+
+  data.paiements.push({ id: Date.now(), montant, type, note, date: new Date().toISOString().split('T')[0] });
+  
+  // Déduire la dette correspondante
+  if(type === 'dette-directe') {
+    data.associe.detteDirecte = Math.max(0, data.associe.detteDirecte - montant);
+    document.getElementById('dette-associe').value = data.associe.detteDirecte;
+  } else if(type === 'dette-femme') {
+    data.associe.detteFemme = Math.max(0, data.associe.detteFemme - montant);
+    document.getElementById('dette-femme').value = data.associe.detteFemme;
+  }
+
+  ajouterHistorique('paiement', `Paiement associé (${type}): ${note}`, montant, new Date().toISOString().split('T')[0]);
+  saveData();
+  renderPaiements();
+  notify('✅ Paiement enregistré: '+fmt(montant));
+  document.getElementById('paiement-montant').value = '';
+  document.getElementById('paiement-note').value = '';
+}
+
+// ========== BILAN ==========
+function calculerBilan() {
+  // Tout est calculé automatiquement depuis les données enregistrées
+  const ca = data.ventes.reduce((s,v) => s + v.ca, 0);
+  const achat = data.ventes.reduce((s,v) => s + v.prixAchat * v.qte, 0);
+  const depenses = data.depenses.reduce((s,d) => s + d.montant, 0);
+
+  const res = document.getElementById('bilan-result');
+  if(ca <= 0 && achat <= 0) {
+    res.innerHTML = `<div class="card"><div style="text-align:center;padding:40px;color:var(--text-muted)">
+      <div style="font-size:2.5rem;margin-bottom:12px">📦</div>
+      <div style="font-size:1rem">Aucune vente enregistrée pour le moment.<br>Commencez par enregistrer vos entrées et sorties de stock.</div>
+    </div></div>`;
+    return;
+  }
+  
+  // ÉTAPE 1: Bénéfice brut
+  const beneficeBrut = ca - achat;
+  
+  // ÉTAPE 2: Retrait 15% du bénéfice → va au prix d'achat
+  const retrait15 = beneficeBrut * 0.15;
+  const beneficeApres15 = beneficeBrut - retrait15;
+  
+  // ÉTAPE 3: Déduire les dépenses
+  const beneficeApresDepenses = beneficeApres15 - depenses;
+  
+  // ÉTAPE 4: Diviser en 2 parts égales
+  const maPart = beneficeApresDepenses / 2;
+  const partAssocieBase = beneficeApresDepenses / 2;
+  
+  // ÉTAPE 5: Retirer 15% de la part de l'associé
+  const retrait15Associe = partAssocieBase * 0.15;
+  const partAssocieApres15 = partAssocieBase - retrait15Associe;
+  
+  // ÉTAPE 6: Soustraire dette femme de sa part
+  const detteF = data.associe.detteFemme||0;
+  const partAssocieApresFemme = partAssocieApres15 - detteF;
+  
+  // ÉTAPE 7: Soustraire sa dette directe (sans l'ajouter à ma part)
+  const detteD = data.associe.detteDirecte||0;
+  const resteAssociePayer = partAssocieApresFemme - detteD;
+  
+  // ÉTAPE 8: Ce que l'associé doit encore
+  const totalDetteAssocieTotale = retrait15Associe + detteF + detteD;
+  
+  // ÉTAPE 9: Produits perso — ce que l'entreprise me doit
+  const totalPerso = data.perso.reduce((s,p)=>s+p.totalDu-p.rembourse,0);
+  // Le retrait15 (remis en achat) + totalPerso = ce que l'entreprise me doit
+  const entrepriseMeDoit = retrait15 + totalPerso;
+  // Soustraire la somme achat+15% sur ce total
+  const achatPlus15 = achat + retrait15;
+  const resteEntrepriseDoit = entrepriseMeDoit - achatPlus15;
+
+  res.innerHTML = `
+  <div class="card" style="margin-bottom:16px;background:var(--dark3);border-color:rgba(46,204,113,0.2)">
+    <div class="card-title" style="color:var(--green)"><span class="icon">🔄</span> Données calculées automatiquement</div>
+    <div class="grid-3">
+      <div style="padding:10px;background:var(--dark4);border-radius:8px;text-align:center">
+        <div style="font-size:.72rem;color:var(--text-muted);margin-bottom:4px">VENTES ENREGISTRÉES</div>
+        <div style="color:var(--green);font-weight:600">${data.ventes.length} vente(s)</div>
+      </div>
+      <div style="padding:10px;background:var(--dark4);border-radius:8px;text-align:center">
+        <div style="font-size:.72rem;color:var(--text-muted);margin-bottom:4px">DÉPENSES ENREGISTRÉES</div>
+        <div style="color:var(--red);font-weight:600">${data.depenses.length} dépense(s)</div>
+      </div>
+      <div style="padding:10px;background:var(--dark4);border-radius:8px;text-align:center">
+        <div style="font-size:.72rem;color:var(--text-muted);margin-bottom:4px">PRODUITS PERSO</div>
+        <div style="color:var(--gold);font-weight:600">${data.perso.length} produit(s)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="icon">📊</span> Résultats du bilan</div>
+    
+    <div class="divider-text">Calcul du bénéfice</div>
+    <div class="grid-3">
+      <div class="repartition-box">
+        <div class="label" style="font-size:.72rem;color:var(--text-muted);text-transform:uppercase">Chiffre d'affaires</div>
+        <div style="font-family:'Playfair Display',serif;font-size:1.3rem;color:var(--green)">${fmt(ca)}</div>
+      </div>
+      <div class="repartition-box">
+        <div class="label" style="font-size:.72rem;color:var(--text-muted);text-transform:uppercase">− Coût marchandises</div>
+        <div style="font-family:'Playfair Display',serif;font-size:1.3rem;color:var(--red)">− ${fmt(achat)}</div>
+      </div>
+      <div class="repartition-box">
+        <div class="label" style="font-size:.72rem;color:var(--text-muted);text-transform:uppercase">= Bénéfice brut</div>
+        <div style="font-family:'Playfair Display',serif;font-size:1.3rem;color:var(--gold)">${fmt(beneficeBrut)}</div>
+      </div>
+    </div>
+    
+    <div class="divider-text" style="margin-top:16px">Déductions</div>
+    <div style="background:var(--dark4);border-radius:12px;padding:16px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+        <span style="color:var(--text-muted)">15% du bénéfice → réinvesti (achat marchandises)</span>
+        <span style="color:var(--red)">− ${fmt(retrait15)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+        <span style="color:var(--text-muted)">Bénéfice après 15%</span>
+        <span style="color:var(--gold)">${fmt(beneficeApres15)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+        <span style="color:var(--text-muted)">− Dépenses totales</span>
+        <span style="color:var(--red)">− ${fmt(depenses)}</span>
+      </div>
+      <hr class="sep">
+      <div style="display:flex;justify-content:space-between">
+        <span style="font-weight:600">Bénéfice net à partager</span>
+        <span style="font-family:'Playfair Display',serif;font-size:1.2rem;color:var(--green)">${fmt(beneficeApresDepenses)}</span>
+      </div>
+    </div>
+
+    <div class="divider-text" style="margin-top:16px">Répartition 50/50</div>
+    <div class="grid-2">
+      <div class="repartition-box">
+        <div style="font-size:.72rem;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px">🟡 MA PART</div>
+        <div style="font-family:'Playfair Display',serif;font-size:1.8rem;color:var(--gold)">${fmt(maPart)}</div>
+        <div style="font-size:.78rem;color:var(--text-muted);margin-top:4px">50% du bénéfice net</div>
+      </div>
+      <div class="repartition-box partner">
+        <div style="font-size:.72rem;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px">🔵 PART ASSOCIÉ (base)</div>
+        <div style="font-family:'Playfair Display',serif;font-size:1.8rem;color:var(--blue)">${fmt(partAssocieBase)}</div>
+        <div style="font-size:.78rem;color:var(--text-muted);margin-top:4px">50% du bénéfice net</div>
+      </div>
+    </div>
+
+    <div class="divider-text" style="margin-top:16px">Calcul part de l'associé</div>
+    <div style="background:var(--dark4);border-radius:12px;padding:16px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+        <span style="color:var(--text-muted)">Part de base (50%)</span>
+        <span>${fmt(partAssocieBase)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+        <span style="color:var(--text-muted)">− 15% de sa part (retenu)</span>
+        <span style="color:var(--red)">− ${fmt(retrait15Associe)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+        <span style="color:var(--text-muted)">Après 15%</span>
+        <span>${fmt(partAssocieApres15)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+        <span style="color:var(--text-muted)">− Dette de sa femme</span>
+        <span style="color:var(--red)">− ${fmt(detteF)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+        <span style="color:var(--text-muted)">Après dette femme</span>
+        <span>${fmt(partAssocieApresFemme)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+        <span style="color:var(--text-muted)">− Sa dette directe envers vous</span>
+        <span style="color:var(--red)">− ${fmt(detteD)}</span>
+      </div>
+      <hr class="sep">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span style="font-weight:600">Il lui reste (net à recevoir)</span>
+        <span style="font-family:'Playfair Display',serif;font-size:1.3rem;color:${resteAssociePayer>=0?'var(--green)':'var(--red)'}">${fmt(Math.max(0,resteAssociePayer))}</span>
+      </div>
+      ${resteAssociePayer<0?`<div style="margin-top:8px;padding:10px;background:rgba(231,76,60,0.1);border-radius:8px;font-size:.82rem;color:var(--red)">⚠️ L'associé doit encore payer ${fmt(Math.abs(resteAssociePayer))} après compensation de sa part.</div>`:''}
+    </div>
+
+    <div class="divider-text" style="margin-top:16px">Ce que l'associé doit encore vous payer</div>
+    <div class="repartition-box debt" style="margin-bottom:16px">
+      <div style="font-size:.72rem;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px">💳 RESTE À PAYER par l'associé</div>
+      <div style="font-family:'Playfair Display',serif;font-size:1.8rem;color:var(--red)">${fmt(Math.max(0, retrait15Associe + Math.max(0,detteF-partAssocieApres15) + detteD))}</div>
+      <div style="font-size:.78rem;color:var(--text-muted);margin-top:4px">15% retenu + dettes non couvertes par sa part</div>
+    </div>
+
+    <div class="divider-text" style="margin-top:16px">Ce que l'entreprise vous doit (produits perso)</div>
+    <div style="background:var(--dark4);border-radius:12px;padding:16px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+        <span style="color:var(--text-muted)">15% réinvesti (bénéfice → achat)</span>
+        <span style="color:var(--gold)">${fmt(retrait15)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+        <span style="color:var(--text-muted)">Produits perso (achat + 10%)</span>
+        <span style="color:var(--gold)">${fmt(totalPerso)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+        <span style="color:var(--text-muted)">Total brut que l'entreprise vous doit</span>
+        <span style="color:var(--gold)">${fmt(entrepriseMeDoit)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+        <span style="color:var(--text-muted)">− Achat marchandises + 15% remboursés</span>
+        <span style="color:var(--red)">− ${fmt(achatPlus15)}</span>
+      </div>
+      <hr class="sep">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span style="font-weight:600">Reste que l'entreprise vous doit</span>
+        <span style="font-family:'Playfair Display',serif;font-size:1.3rem;color:var(--gold)">${fmt(Math.max(0,resteEntrepriseDoit))}</span>
+      </div>
+    </div>
+  </div>`;
+  
+  updateDashboard();
+}
+
+// ========== RENDER FUNCTIONS ==========
+function renderStock() {
+  const tbody = document.getElementById('stock-tbody');
+  if(data.stock.length===0){
+    tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:30px">Aucun produit en stock</td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.stock.map(p=>`
+    <tr>
+      <td><strong>${p.nom}</strong></td>
+      <td>${p.qteDisponible} <span class="badge ${p.qteDisponible<5?'badge-red':'badge-green'}">${p.qteDisponible<5?'Faible':'OK'}</span></td>
+      <td>${fmt(p.prixAchat)}</td>
+      <td>${fmt(p.prixVente)}</td>
+      <td>${fmt(p.qteDisponible*p.prixAchat)}</td>
+      <td><button class="btn btn-red btn-sm" onclick="supprimerProduit(${p.id})">🗑️</button></td>
+    </tr>
+  `).join('');
+}
+
+function renderPerso() {
+  const tbody = document.getElementById('perso-tbody');
+  if(data.perso.length===0){
+    tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:30px">Aucun produit personnel</td></tr>';
+    document.getElementById('total-perso-du').textContent='0 GNF';
+    return;
+  }
+  let total = 0;
+  tbody.innerHTML = data.perso.map(p=>{
+    const resteDu = p.totalDu - p.rembourse;
+    total += resteDu;
+    return `<tr>
+      <td><strong>${p.nom}</strong></td>
+      <td>${p.qte}</td>
+      <td>${fmt(p.prixAchat)}</td>
+      <td style="color:var(--green)">+${fmt(p.commission)}</td>
+      <td style="color:var(--gold)">${fmt(p.totalDu)}</td>
+      <td><span class="badge ${resteDu>0?'badge-gold':'badge-green'}">${resteDu>0?'En attente':'Remboursé'}</span></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('total-perso-du').textContent = fmt(total);
+}
+
+function renderDepenses() {
+  const tbody = document.getElementById('depenses-tbody');
+  if(data.depenses.length===0){
+    tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:30px">Aucune dépense</td></tr>';
+    return;
+  }
+  let total = 0;
+  const thisMonth = new Date().toISOString().slice(0,7);
+  let totalMois = 0;
+  
+  tbody.innerHTML = data.depenses.map(d=>{
+    total += d.montant;
+    if(d.date && d.date.startsWith(thisMonth)) totalMois += d.montant;
+    return `<tr>
+      <td>${d.date||'—'}</td>
+      <td><span class="badge badge-blue">${d.categorie}</span></td>
+      <td>${d.desc||'—'}</td>
+      <td style="color:var(--red)">${fmt(d.montant)}</td>
+      <td><button class="btn btn-red btn-sm" onclick="supprimerDepense(${d.id})">🗑️</button></td>
+    </tr>`;
+  }).join('');
+  
+  document.getElementById('stat-dep-total').textContent = fmt(total);
+  document.getElementById('stat-dep-mois').textContent = fmt(totalMois);
+  
+  // Update bilan input
+  const bilanDep = document.getElementById('bilan-depenses');
+  if(bilanDep && !bilanDep.dataset.manual) bilanDep.value = total;
+}
+
+function renderPaiements() {
+  const el = document.getElementById('historique-paiements');
+  const pais = data.paiements.slice().reverse();
+  if(pais.length===0){ el.textContent='Aucun paiement enregistré.'; return; }
+  el.innerHTML = pais.map(p=>`
+    <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+      <div>
+        <span class="badge badge-green" style="margin-right:6px">${p.date}</span>
+        <span>${p.note||p.type}</span>
+      </div>
+      <span style="color:var(--green);font-weight:600">+${fmt(p.montant)}</span>
+    </div>
+  `).join('');
+}
+
+function renderHistorique() {
+  const tbody = document.getElementById('historique-tbody');
+  const filterType = document.getElementById('filter-type').value;
+  let items = data.historique.slice().reverse();
+  if(filterType) items = items.filter(i=>i.type===filterType);
+  
+  if(items.length===0){
+    tbody.innerHTML='<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:30px">Aucun historique</td></tr>';
+    return;
+  }
+  const typeColors = {entree:'badge-green',sortie:'badge-blue',depense:'badge-red',paiement:'badge-gold',perso:'badge-purple'};
+  tbody.innerHTML = items.map(i=>`
+    <tr>
+      <td>${i.date||'—'}</td>
+      <td><span class="badge ${typeColors[i.type]||'badge-blue'}">${i.type}</span></td>
+      <td>${i.desc}</td>
+      <td>${i.montant?fmt(i.montant):'—'}</td>
+    </tr>
+  `).join('');
+}
+
+function filtrerHistorique() { renderHistorique(); }
+
+// ========== DASHBOARD ==========
+function updateDashboard() {
+  const totalCA = data.ventes.reduce((s,v)=>s+v.ca,0);
+  const totalAchat = data.ventes.reduce((s,v)=>s+v.prixAchat*v.qte,0);
+  const totalBenefice = data.ventes.reduce((s,v)=>s+v.benefice,0);
+  const totalDep = data.depenses.reduce((s,d)=>s+d.montant,0);
+  const netBen = totalBenefice - totalBenefice*0.15 - totalDep;
+  const maPart = netBen/2;
+  const partAssoc = netBen/2;
+  const totalPerso = data.perso.reduce((s,p)=>s+p.totalDu-p.rembourse,0);
+  const detteDirecte = parseFloat(document.getElementById('dette-associe').value)||0;
+  const detteFemme = parseFloat(document.getElementById('dette-femme').value)||0;
+  
+  document.getElementById('stat-ca').textContent = fmt(totalCA);
+  document.getElementById('stat-benefice').textContent = fmt(netBen);
+  document.getElementById('stat-ma-part').textContent = fmt(maPart);
+  document.getElementById('stat-part-associe').textContent = fmt(partAssoc);
+  document.getElementById('stat-depenses').textContent = fmt(totalDep);
+  document.getElementById('stat-entreprise-doit').textContent = fmt(totalPerso);
+  document.getElementById('stat-associe-doit').textContent = fmt(detteDirecte+detteFemme);
+  document.getElementById('stat-produits').textContent = data.stock.length;
+  
+  // Associé displays
+  document.getElementById('disp-dette-associe').textContent = fmt(detteDirecte);
+  document.getElementById('disp-dette-femme').textContent = fmt(detteFemme);
+  document.getElementById('disp-total-dettes').textContent = fmt(detteDirecte+detteFemme);
+  
+  // Last ops
+  const lastOps = document.getElementById('last-ops');
+  const last5 = data.historique.slice(-5).reverse();
+  if(last5.length===0){ lastOps.textContent='Aucune opération.'; return; }
+  lastOps.innerHTML = last5.map(h=>`<div style="padding:4px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between"><span style="color:var(--text)">${h.desc}</span><span style="color:var(--text-muted);font-size:.78rem">${h.date}</span></div>`).join('');
+}
+
+function updateAllDisplays() {
+  renderStock();
+  renderPerso();
+  renderDepenses();
+  renderPaiements();
+  renderHistorique();
+  updateDashboard();
+  calculerBilan();
+}
+
+// ========== HELPERS ==========
+function fmt(n) {
+  if(isNaN(n)||n===undefined||n===null) return '0 GNF';
+  return Math.round(n).toLocaleString('fr-FR') + ' GNF';
+}
+
+function ajouterHistorique(type, desc, montant, date) {
+  data.historique.push({ id: Date.now(), type, desc, montant, date: date||new Date().toISOString().split('T')[0] });
+}
+
+function supprimerProduit(id) {
+  if(!confirm('Supprimer ce produit du stock ?')) return;
+  data.stock = data.stock.filter(p=>p.id!==id);
+  saveData();
+  renderStock();
+  notify('Produit supprimé');
+}
+
+function supprimerDepense(id) {
+  if(!confirm('Supprimer cette dépense ?')) return;
+  data.depenses = data.depenses.filter(d=>d.id!==id);
+  saveData();
+  renderDepenses();
+  notify('Dépense supprimée');
+}
+
+function viderHistorique() {
+  if(!confirm('Vider tout l\'historique ? Cette action est irréversible.')) return;
+  data.historique = [];
+  saveData();
+  renderHistorique();
+}
+
+function clearModal(id) {
+  document.querySelectorAll('#'+id+' input').forEach(i=>{
+    if(i.type!=='date') i.value='';
+  });
+}
+
+function notify(msg, duration=3000) {
+  const el = document.getElementById('notification');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'), duration);
+}
+
+// ========== EXPORT / IMPORT ==========
+function exportData() {
+  const json = JSON.stringify(data, null, 2);
+  const blob = new Blob([json], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'boulliwel_data_'+new Date().toISOString().split('T')[0]+'.json';
+  a.click();
+  notify('✅ Données exportées avec succès');
+}
+
+function importData() {
+  document.getElementById('import-input').click();
+}
+
+function handleImport(e) {
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      const imported = JSON.parse(ev.target.result);
+      if(confirm('Remplacer toutes les données actuelles par les données importées ?')) {
+        data = imported;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        syncInputsFromData();
+        updateAllDisplays();
+        notify('✅ Données importées avec succès');
+      }
+    } catch(err) {
+      notify('⚠️ Fichier invalide');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+function saveToCloud() {
+  // Encode data as URL hash for sharing (lightweight "cloud")
+  const json = JSON.stringify(data);
+  const encoded = btoa(encodeURIComponent(json));
+  const url = window.location.href.split('#')[0] + '#data=' + encoded;
+  
+  // Copy to clipboard
+  navigator.clipboard.writeText(url).then(()=>{
+    notify('✅ Lien copié ! Envoyez-le à Gmail ou sauvegardez-le. Il contient toutes vos données.');
+  }).catch(()=>{
+    // Fallback
+    const ta = document.createElement('textarea');
+    ta.value = url;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    notify('✅ Lien copié dans le presse-papiers');
+  });
+}
+
+function loadFromHash() {
+  const hash = window.location.hash;
+  if(hash && hash.startsWith('#data=')) {
+    try {
+      const encoded = hash.slice(6);
+      const json = decodeURIComponent(atob(encoded));
+      const imported = JSON.parse(json);
+      data = imported;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      notify('✅ Données restaurées depuis le lien !');
+      return true;
+    } catch(e) {}
+  }
+  return false;
+}
+
+function syncInputsFromData() {
+  document.getElementById('dette-associe').value = data.associe?.detteDirecte||0;
+  document.getElementById('dette-femme').value = data.associe?.detteFemme||0;
+}
+
+// ========== INIT ==========
+document.addEventListener('DOMContentLoaded', function() {
+  const fromHash = loadFromHash();
+  if(!fromHash) loadData();
+  syncInputsFromData();
+  updateAllDisplays();
+  
+  // Auto-save on associé changes
+  ['dette-associe','dette-femme'].forEach(id=>{
+    document.getElementById(id).addEventListener('input', ()=>{ saveData(); updateDashboard(); calculerBilan(); });
+  });
+});
+
+
+// ========== PWA SERVICE WORKER ==========
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('sw.js').then(function(reg) {
+      console.log('SW enregistre:', reg.scope);
+    }).catch(function(err) {
+      console.log('SW erreur:', err);
+    });
+  });
+}
+
+// ========== BOUTON INSTALLATION PWA ==========
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', function(e) {
+  e.preventDefault();
+  deferredPrompt = e;
+  const btn = document.getElementById('btn-install');
+  if(btn) {
+    btn.style.display = 'inline-flex';
+    btn.onclick = function() {
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then(function(result) {
+        if(result.outcome === 'accepted') {
+          notify('Application installee avec succes !');
+        }
+        deferredPrompt = null;
+        btn.style.display = 'none';
+      });
+    };
+  }
+});
+window.addEventListener('appinstalled', function() {
+  notify('Boulliwel Service installe sur votre telephone !');
+});
+
+</script>
+</body>
+</html>
